@@ -79,6 +79,35 @@ jobs:
           java-version: '8'   # Esse repositório pede JDK 8, não 11
 
       # PASSO 3: Configurar Haxe (versão compatível com 0.5.2h)
+name: Build Psych Engine 0.5.2h Android (Repositório FIXED)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:   # Permite iniciar manualmente
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # PASSO 1: Checkout do código deste repositório (action v4 atualizada)
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      # PASSO 2: Configurar Java 8 (exigido pelo README do repositório)
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '8'   # Esse repositório pede JDK 8, não 11
+
+      # PASSO 3: Configurar Haxe (versão compatível com 0.5.2h)
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1.18   # Versão atualizada
         with:
@@ -101,6 +130,41 @@ jobs:
           # Bibliotecas específicas para Android (conforme instruções do repositório)
           haxelib git extension-androidtools https://github.com/jigsaw-4277821/extension-androidtools.git
           haxelib git extension-videoview https://github.com/jigsaw-4277821/extension-videoview.git
+          haxelib remove linc_luajit
+          haxelib git linc_luajit https://github.com/jigsaw-4277821/linc_luajit.git
+        continue-on-error: false   # Se falhar, para o build para investigar
+
+      # PASSO 6: Configurar Lime para Android
+      - name: Setup Lime Android
+        run: |
+          haxelib run lime setup
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
+          haxelib run lime config JAVA_HOME $JAVA_HOME_8_X64   # Aponta para o Java 8
+
+      # PASSO 7: Compilar o APK (usando o comando exato do README)
+      - name: Build APK
+        run: |
+          haxelib run lime build android -final
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+          ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk-bundle
+
+      # PASSO 8: Upload do APK (action v4, Node 20)
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PsychEngine-0.5.2h-Android
+          path: |
+            # Caminho exato indicado no README do repositório
+            export/release/android/bin/app/build/outputs/apk/debug/app-debug.apk
+            # Caminho alternativo comum (release)
+            export/release/android/bin/app/build/outputs/apk/release/app-release.apk
+            # Caminhos genéricos como fallback
+            export/**/*.apk
+          if-no-files-found: error   # Muda para 'error' para saber se o caminho está errado
+          retention-days: 30
+nsion-videoview https://github.com/jigsaw-4277821/extension-videoview.git
           haxelib remove linc_luajit
           haxelib git linc_luajit https://github.com/jigsaw-4277821/linc_luajit.git
         continue-on-error: false   # Se falhar, para o build para investigar
