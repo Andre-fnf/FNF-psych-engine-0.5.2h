@@ -1,123 +1,37 @@
-# This is a basic workflow to help you get started with Actions
+name: Build Psych Engine 0.5.2h Android
 
-name: Android Build
-
-# Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ master ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ master ]
-
- # Allows you to run this workflow manually from the Actions tab
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  buildAndroid:
-    name: buildAndroid
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2.3.1
-
-      - name: Setup Android NDK
-        uses: nttld/setup-ndk@v1
-        id: setup-ndk
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          ndk-version: r21e
+          submodules: recursive
+          fetch-depth: 0
 
-      - name: Setup Java JDK
-        uses: actions/setup-java@v1
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          java-version: 11
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
+          distribution: 'temurin'
+          java-version: '8'
 
       - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1.1.5
+        uses: krdlab/setup-haxe@v1.18
         with:
           haxe-version: 4.2.5
 
-      - name: Install Haxelib
-        run: |
-          haxelib setup /home/runner/haxelib
-          haxelib install hxcpp > /dev/null
-          haxelib install lime 7.9.0
-          haxelib install newgrounds 1.3.0
-          haxelib install openfl 9.1.0
-          haxelib --never install flixel 4.11.0
-name: Build Psych Engine 0.5.2h Android (Repositório FIXED)
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
-  workflow_dispatch:   # Permite iniciar manualmente
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      # PASSO 1: Checkout do código deste repositório (action v4 atualizada)
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
-      # PASSO 2: Configurar Java 8 (exigido pelo README do repositório)
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '8'   # Esse repositório pede JDK 8, não 11
-
-      # PASSO 3: Configurar Haxe (versão compatível com 0.5.2h)
-name: Build Psych Engine 0.5.2h Android (Repositório FIXED)
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
-  workflow_dispatch:   # Permite iniciar manualmente
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      # PASSO 1: Checkout do código deste repositório (action v4 atualizada)
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
-      # PASSO 2: Configurar Java 8 (exigido pelo README do repositório)
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '8'   # Esse repositório pede JDK 8, não 11
-
-      # PASSO 3: Configurar Haxe (versão compatível com 0.5.2h)
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1.18   # Versão atualizada
-        with:
-          haxe-version: 4.2.5   # O repositório sugere Haxe 4.2.4+, então 4.2.5 é seguro
-
-      # PASSO 4: Configurar Android SDK (action v3)
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # PASSO 5: Instalar as bibliotecas Haxe EXATAS que o README.md pede
       - name: Install Haxe libraries
         run: |
           haxelib install lime
@@ -127,22 +41,18 @@ jobs:
           haxelib install flixel-ui
           haxelib install hscript
           haxelib install newgrounds
-          # Bibliotecas específicas para Android (conforme instruções do repositório)
           haxelib git extension-androidtools https://github.com/jigsaw-4277821/extension-androidtools.git
           haxelib git extension-videoview https://github.com/jigsaw-4277821/extension-videoview.git
           haxelib remove linc_luajit
           haxelib git linc_luajit https://github.com/jigsaw-4277821/linc_luajit.git
-        continue-on-error: false   # Se falhar, para o build para investigar
 
-      # PASSO 6: Configurar Lime para Android
       - name: Setup Lime Android
         run: |
           haxelib run lime setup
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
-          haxelib run lime config JAVA_HOME $JAVA_HOME_8_X64   # Aponta para o Java 8
+          haxelib run lime config JAVA_HOME $JAVA_HOME_8_X64
 
-      # PASSO 7: Compilar o APK (usando o comando exato do README)
       - name: Build APK
         run: |
           haxelib run lime build android -final
@@ -150,50 +60,12 @@ jobs:
           ANDROID_HOME: /usr/local/lib/android/sdk
           ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk-bundle
 
-      # PASSO 8: Upload do APK (action v4, Node 20)
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: PsychEngine-0.5.2h-Android
           path: |
-            # Caminho exato indicado no README do repositório
             export/release/android/bin/app/build/outputs/apk/debug/app-debug.apk
-            # Caminho alternativo comum (release)
             export/release/android/bin/app/build/outputs/apk/release/app-release.apk
-            # Caminhos genéricos como fallback
-            export/**/*.apk
-          if-no-files-found: error   # Muda para 'error' para saber se o caminho está errado
-          retention-days: 30
-          haxelib git linc_luajit https://github.com/jigsaw-4277821/linc_luajit.git
-        continue-on-error: true   # Se falhar, para o build para investigar
-
-      # PASSO 6: Configurar Lime para Android
-      - name: Setup Lime Android
-        run: |
-          haxelib run lime setup
-          haxelib run lime config ANDROID_SDK $ANDROID_HOME
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
-          haxelib run lime config JAVA_HOME $JAVA_HOME_8_X64   # Aponta para o Java 8
-
-      # PASSO 7: Compilar o APK (usando o comando exato do README)
-      - name: Build APK
-        run: |
-          haxelib run lime build android -final
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
-          ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk-bundle
-
-      # PASSO 8: Upload do APK (action v4, Node 20)
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: PsychEngine-0.5.2h-Android
-          path: |
-            # Caminho exato indicado no README do repositório
-            export/release/android/bin/app/build/outputs/apk/debug/app-debug.apk
-            # Caminho alternativo comum (release)
-            export/release/android/bin/app/build/outputs/apk/release/app-release.apk
-            # Caminhos genéricos como fallback
-            export/**/*.apk
-          if-no-files-found: error   # Muda para 'error' para saber se o caminho está errado
+          if-no-files-found: error
           retention-days: 30
